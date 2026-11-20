@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>향로 발굴 기록 · 16bit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Press+Start+2P&display=swap">
+<style>
+:root{--gold:#f2c14e;--gold2:#c8902a;--navy:#0b1030;--ink:#05071a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ink);color:#ffe9b0;font-family:'Do Hyeon',system-ui,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column;align-items:center;padding-top:4px}
+#hud{display:flex;justify-content:space-between;align-items:center;height:32px;font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);gap:6px}
+#hud button{font-family:inherit;font-size:9px;background:none;border:2px solid var(--gold2);color:var(--gold);padding:4px 6px;cursor:pointer}
+#stage{position:relative;border:3px solid var(--gold2);box-shadow:0 0 0 3px #000,0 0 24px #f2c14e33;background:#000;flex:none}
+#c{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;cursor:crosshair}
+#overlay{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#panel{height:150px;padding-top:8px;flex:none}
+.box{background:var(--navy);border:3px solid var(--gold);box-shadow:inset 0 0 0 2px #000,0 0 0 2px #000;padding:7px 10px}
+#dlg{min-height:56px;font-size:15px;line-height:1.35}
+#codex{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:7px}
+.slot{aspect-ratio:1;background:#0f1540;border:2px solid #343a78;display:flex;align-items:center;justify-content:center;position:relative;font-family:'Press Start 2P',monospace;color:#343a78;font-size:12px;overflow:hidden}
+.slot.on{border-color:var(--gold);box-shadow:0 0 8px #f2c14e66}
+.slot canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.slot span{position:absolute;bottom:0;left:0;right:0;text-align:center;font-family:'Do Hyeon',sans-serif;font-size:11px;color:var(--gold);background:#0b1030dd;line-height:1.3}
+.prog{height:10px;background:#000;border:2px solid var(--gold2);margin-top:8px}
+.prog i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--gold) 0 6px,#ffe08a 6px 8px);width:0}
+.btn{pointer-events:auto;font-family:'Press Start 2P',monospace;font-size:10px;color:#1a1000;background:var(--gold);border:none;padding:10px 14px;box-shadow:0 4px 0 var(--gold2),0 4px 0 2px #000;cursor:pointer}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--gold2)}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px}
+.dim{background:#000a}
+.banner{font-family:'Press Start 2P',monospace;color:var(--gold);text-shadow:3px 3px 0 #000,0 0 14px #f2c14e88;line-height:1.4}
+.sub{font-size:15px;color:#fff3cf;text-shadow:2px 2px 0 #000}
+.card{pointer-events:auto;width:88%;background:var(--navy);border:3px solid var(--gold);box-shadow:0 0 0 3px #000,0 0 30px #f2c14e55;padding:10px;text-align:left}
+.card h3{margin:2px 0 8px;font-weight:400;font-size:22px;color:var(--gold)}
+.card h3 small{font-family:'Press Start 2P',monospace;font-size:8px;color:#9aa0e0;margin-left:6px}
+.card canvas{width:100px;height:100px;image-rendering:pixelated;border:2px solid var(--gold2);background:#000;float:left;margin:0 10px 6px 0}
+.card p{margin:0 0 6px;font-size:14px;line-height:1.4}
+.card .how{color:#9ee6cf;font-size:13px}
+.tag{font-family:'Press Start 2P',monospace;font-size:8px;color:#9aa0e0}
+.label{position:absolute;font-size:13px;color:var(--gold);white-space:nowrap;transform:translateY(-50%);text-shadow:1px 1px 0 #000;opacity:0;transition:opacity .3s steps(3)}
+.label small{display:block;color:#c9c3ff;font-size:11px}
+.label.on{opacity:1}
+.bottom{position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center}
+#ph{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none;display:none}
+.cream{position:absolute;pointer-events:none;background:#f7e7c1;border:calc(var(--u)*0.8) solid #7a4a1e;box-shadow:inset 0 0 0 calc(var(--u)*0.6) #d2a06a,0 0 0 calc(var(--u)*0.6) #3b2010;color:#6b3a10;font-family:'Do Hyeon',sans-serif}
+.cbar{height:calc(var(--u)*3);background:#5a3a22;border:calc(var(--u)*0.5) solid #3b2010;margin-top:2%}.cbar i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,#e9b23c 0 calc(var(--u)*2),#ffe08a calc(var(--u)*2) calc(var(--u)*2.6));transition:width .15s steps(3)}
+.tag2{font-family:'Press Start 2P',monospace;font-size:calc(var(--u)*2.4);align-self:center}
+.abtn{pointer-events:auto;font-size:calc(var(--u)*5.4);padding:2.2% 4%;cursor:pointer;touch-action:none}.abtn b{display:inline-block;width:1.4em;height:1.4em;line-height:1.4em;border-radius:50%;background:#1f8a4c;color:#fff;font-weight:400;text-align:center;box-shadow:0 0 0 calc(var(--u)*0.5) #0f4a28;margin-right:.3em}
+.abtn:active{transform:translateY(2px)}
+.iff{font-family:'Press Start 2P',monospace;font-size:calc(var(--u)*6.4);color:#e2a12a;text-shadow:calc(var(--u)*0.5) calc(var(--u)*0.5) 0 #7a3d10;margin-bottom:2%}
+.yaho{position:absolute;white-space:nowrap;background:#fff;border:calc(var(--u)*0.7) solid #2a160c;color:#c8302a;font-size:calc(var(--u)*6);padding:1% 3%;transform:translate(-50%,-50%) rotate(-6deg)}
+.yaho:after{content:'';position:absolute;left:12%;bottom:calc(var(--u)*-2.6);border:calc(var(--u)*1.2) solid transparent;border-top-color:#2a160c;border-left-color:#2a160c}
+.mvglow{position:absolute;left:50%;top:40%;width:58%;aspect-ratio:1;border-radius:50%;background:#f9edcf;transform:translate(-50%,-50%)}
+.mvimg{position:relative;height:62%;image-rendering:pixelated}
+.spk{position:absolute;color:#e9b23c;font-size:calc(var(--u)*5);animation:blink 1.2s steps(1) infinite}
+.tipbar{position:absolute;left:4%;right:4%;bottom:2.5%;background:#2a1a10;color:#f7e7c1;font-size:calc(var(--u)*3.9);padding:1.6% 3%;white-space:nowrap;font-family:'Do Hyeon',sans-serif}.tipbar b{font-family:'Press Start 2P',monospace;color:#f2c14e;font-size:.7em;font-weight:400;margin-right:.6em}
+.plate{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:#1b1f3f;border:2px solid var(--gold2);padding:4px 10px;font-size:13px;color:var(--gold);white-space:nowrap;box-shadow:0 0 0 2px #000}
+@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .4s steps(6)}
+@keyframes blink{50%{opacity:0}}
+.blink{animation:blink 1s steps(1) infinite}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud"><span id="sceneName">金銅大香爐</span><span id="hudR"></span><button id="mute">♪ ON</button></div>
+  <div id="stage"><canvas id="c"></canvas><canvas id="ph" width="720" height="1080"></canvas><div id="overlay"></div></div>
+  <div id="panel">
+    <div id="dlg" class="box"><span id="dlgText"></span></div>
+    <div id="digProg" class="prog" style="display:none"><i id="digBar"></i></div>
+    <div id="codex" style="display:none"></div>
+  </div>
+</div>
+<script>
+(()=>{
+const W=160,H=240;
+const $=s=>document.querySelector(s);
+const cv=$('#c'),ctx=cv.getContext('2d');cv.width=W;cv.height=H;ctx.imageSmoothingEnabled=false;
+const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.imageSmoothingEnabled=false;return [c,g];};
+const [buf,bx]=mk(W,H);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------- palette & pixel helpers ---------- */
+const PAL={K:'#2a1a0c',D:'#8a5a1c',G:'#d9a23a',Y:'#ffe08a',W:'#fff7dc',R:'#c8452f',B:'#4b6bd6',S:'#f0c090',T:'#2f8f7a'};
+function P(g,x,y,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),1,1);}
+function RR(g,x,y,w,h,c){g.fillStyle=c;g.fillRect(Math.round(x),Math.round(y),w,h);}
+function spr(g,rows,x,y,pal){pal=pal||PAL;for(let j=0;j<rows.length;j++){const r=rows[j];for(let i=0;i<r.length;i++){const ch=r[i];if(ch!=='.')P(g,x+i,y+j,pal[ch]);}}}
+function disc(g,x,y,r,c){const n=Math.ceil(r);for(let j=-n;j<=n;j++)for(let i=-n;i<=n;i++)if(i*i+j*j<=r*r)P(g,x+i,y+j,c);}
+function ring(g,x,y,r,c){const n=Math.ceil(2*Math.PI*r*1.6);for(let i=0;i<n;i++){const a=i/n*Math.PI*2;P(g,x+Math.cos(a)*r,y+Math.sin(a)*r,c);}}
+function hash(x,y){let h=(Math.imul(x,374761393)+Math.imul(y,668265263))|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;}
+
+/* ---------- sprites ---------- */
+const PHX=[
+"........KK.........",
+".......KYYK........",
+"......KYKYYK.......",
+"......KYYYYRK......",
+".......KYYK....KK..",
+"..KK...KGGK...KYYK.",
+".KYYKK.KGGK..KYGGK.",
+"KYGGGYKKGGKKYGGGK..",
+"KGGDGGGYGGYGGGDGK..",
+".KGDDGGGGGGGGDDK...",
+"..KKDDGGGGGGDDKK...",
+"....KKGGGGGGKK.....",
+".....KGGDDGGK......",
+"....KYGK..KGYK.....",
+"...KYGK....KGYK....",
+"....KK......KK....."];
+const PETAL=["...D...","..DYD..",".DYYGD.",".DYGGD.","DYGGGGD","DYGGGGD",".DGGGD.","..DDD.."];
+const DHEAD=["KK.......KK",".KK.....KK.","..KGGGGGK..",".KGYKGKYGK.","KGGGGGGGGGK",".KGRGGGRGK.","..KKKKKKK.."];
+const MUS=["R","W","Y","T","R"].map(c=>[".S.","KDK","D"+c+"D","KDK","D.D"]);
+const DEER=["K.K..",".K...","KKKK.",".K.K."],TIGER=["K....","KKKKK","KDKDK","K.K.K"],MONKEY=[".K.",".KK","KK.","K.K"],
+      ELEPH=[".KKK.","KKKKK","K.KK.","K.K.."],BIRD=["K.K",".K."],HERMIT=[".S.","KDK",".D."];
+const ANIMALS=[{s:DEER,x:-17,y:21},{s:MONKEY,x:12,y:14},{s:TIGER,x:5,y:30},{s:ELEPH,x:-11,y:38},{s:BIRD,x:-4,y:23},{s:HERMIT,x:17,y:38},{s:DEER,x:-22,y:44},{s:BIRD,x:20,y:24}];
+const WALK=[["..KK..",".KSSK.","..SS..",".BBBB.","BBBBBB","S.BB.S","..BB..",".K..K.",".K..K."],
+            ["..KK..",".KSSK.","..SS..",".BBBB.","BBBBBB","S.BB.S","..BB..","..KK..","..KK.."]];
+const VIS=["..KK..",".KKKK.","..KK..",".KKKK.","KKKKKK","K.KK.K","..KK..","..KK..",".K..K.",".K..K."];
+
+/* ---------- the incense burner (prerendered) ---------- */
+function shade(x,hw){if(x===-hw||x===hw)return PAL.K;const s=(x+hw)/(2*hw);return s<0.15?PAL.G:s<0.4?PAL.Y:s<0.78?PAL.G:PAL.D;}
+function drawBase(g,cx,y0){const h=7;for(let r=0;r<h;r++){const k=(r-3)/3.5;const hw=Math.round(22*Math.sqrt(Math.max(0,1-k*k)));for(let x=-hw;x<=hw;x++)P(g,cx+x,y0+r,(x===-hw||x===hw||r===h-1)?PAL.K:r<2?PAL.Y:PAL.D);}
+  for(let x=-18;x<=16;x+=6){P(g,cx+x,y0+3,PAL.Y);P(g,cx+x+1,y0+2,PAL.Y);P(g,cx+x+2,y0+3,PAL.Y);}}
+function drawDragon(g,cx,S){const pts=[];
+  for(let i=0;i<=80;i++){const s=i/80,A=12*Math.pow(1-s,0.8);pts.push([cx+A*Math.sin(s*Math.PI*2.6+0.6),S+37-s*29]);}
+  pts.forEach(p=>disc(g,p[0],p[1],3.4,PAL.K));
+  pts.forEach(p=>disc(g,p[0],p[1],2.4,PAL.G));
+  pts.forEach((p,i)=>{P(g,p[0]-1,p[1]-1,PAL.Y);if(i%6===0)P(g,p[0]+1,p[1],PAL.D);});
+  [0.22,0.5,0.75].forEach((s,j)=>{const p=pts[Math.round(s*80)],d=j%2?1:-1;for(let k=1;k<=5;k++)P(g,p[0]+d*(2+k),p[1]+(k>3?1:0),PAL.K);for(let k=0;k<3;k++)P(g,p[0]+d*8,p[1]-1+k,PAL.Y);});
+  spr(g,DHEAD,cx-5,S+1);}
+function drawBowl(g,cx,B){const h=30,hwAt=r=>Math.round(28-16*Math.pow(clamp(r,0,h-1)/(h-1),1.8));
+  for(let r=0;r<h;r++){const hw=hwAt(r);for(let x=-hw;x<=hw;x++)P(g,cx+x,B+r,r===h-1?PAL.K:shade(x,hw));}
+  [[1,0],[10,4],[19,0]].forEach(([ty,off])=>{const hw=hwAt(ty+6);for(let px=-hw+3+off;px<=hw-3;px+=8)spr(g,PETAL,cx+px-3,B+ty);});}
+function drawLid(g,cx,L){const h=52,hwAt=r=>Math.round(10+19*Math.sin(clamp(r/(h-1),0,1)*Math.PI/2));
+  for(let r=0;r<h;r++){const hw=hwAt(r);for(let x=-hw;x<=hw;x++)P(g,cx+x,L+r,r===0?PAL.K:shade(x,hw));}
+  for(let lv=0;lv<5;lv++){const y=L+9+lv*8,hw=hwAt(y-L+3),off=(lv%2)*3;
+    for(let px=-hw+4+off;px<=hw-4;px+=7){for(let k=0;k<4;k++){P(g,cx+px-k,y+k,PAL.D);P(g,cx+px+k,y+k,PAL.D);}P(g,cx+px,y,PAL.W);}}
+  for(let x=-29;x<=29;x++){P(g,cx+x,L+h-2,PAL.D);P(g,cx+x,L+h-1,PAL.K);}
+  [-8,-4,0,4,8].forEach((dx,i)=>spr(g,MUS[i],cx+dx-1,L+2));
+  ANIMALS.forEach(a=>spr(g,a.s,cx+a.x,L+a.y));}
+function drawBurner(g,cx,T){drawBase(g,cx,T+134);drawDragon(g,cx,T+99);drawBowl(g,cx,T+70);drawLid(g,cx,T+18);
+  disc(g,cx,T+17,2,PAL.Y);P(g,cx-1,T+16,PAL.W);spr(g,PHX,cx-9,T);}
+const BW=64,BH=144,BCX=32;
+const [burnerCv,burnerG]=mk(BW,BH);drawBurner(burnerG,BCX,1);
+const bData=burnerG.getImageData(0,0,BW,BH).data;
+const bOpaque=(x,y)=>x>=0&&y>=0&&x<BW&&y<BH&&bData[(y*BW+x)*4+3]>0;
+const drawBurnerAt=(g,cx,T)=>{if(IMG.burner_small)g.drawImage(IMG.burner_small,cx-23,T);};
+
+/* ---------- audio ---------- */
+let AC=null,muted=false;
+function audio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();}
+function beep(f,d,type,v,slide){if(!AC||muted)return;d=d||0.08;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.linearRampToValueAtTime(f+slide,t+d);g.gain.setValueAtTime(v||0.04,t);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+0.02);}
+const jingle=(ns,gap)=>ns.forEach((n,i)=>setTimeout(()=>beep(n,0.14,'square',0.05),i*(gap||110)));
+$('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'♪ OFF':'♪ ON';};
+
+/* ---------- UI ---------- */
+const overlay=$('#overlay');
+let dlgTimer;
+function say(t){clearInterval(dlgTimer);const el=$('#dlgText');el.textContent='';let i=0;
+  dlgTimer=setInterval(()=>{el.textContent=t.slice(0,++i);if(i%3===0)beep(900,0.02,'square',0.012);if(i>=t.length)clearInterval(dlgTimer);},26);}
+function layout(){const availH=innerHeight-32-158-14;const w=Math.max(200,Math.min(innerWidth-14,480,Math.floor(availH*2/3)));
+  $('#stage').style.width=w+'px';$('#stage').style.height=Math.round(w*1.5)+'px';$('#hud').style.width=w+'px';$('#panel').style.width=w+'px';$('#stage').style.setProperty('--u',(w/100)+'px');}
+addEventListener('resize',layout);layout();
+
+/* ---------- data ---------- */
+const ENTRIES=[
+ {id:'phoenix',name:'봉황',en:'PHOENIX',dy:9,r:9,sub:'하늘 세계',
+  how:'꼭대기에서 반짝이는 깃털을 따라가 발견',
+  desc:'뚜껑 꼭대기에서 날개를 펴고 선 상서로운 새. 턱 아래 여의주를 끼고 있으며 하늘 세계를 상징한다.'},
+ {id:'musicians',name:'다섯 악사',en:'MUSICIANS',dy:24,r:6,sub:'음악이 흐르는 낙원',
+  how:'봉황 발밑에서 들려오는 소리를 추적',
+  desc:'뚜껑 윗부분 봉우리 사이에 다섯 악사가 둘러앉아 완함·종적·배소·거문고·북을 연주한다. 백제 음악을 보여 주는 귀한 자료.'},
+ {id:'mountain',name:'산과 동물',en:'MOUNTAINS',dy:40,r:11,sub:'신선의 세계',
+  how:'겹겹의 봉우리를 하나씩 비춰 숨은 동물을 찾음',
+  desc:'첩첩이 솟은 산봉우리 사이로 호랑이·사슴·코끼리·원숭이 같은 동물과 신선 같은 인물이 숨어 있다. 신선이 사는 이상 세계를 담았다.'},
+ {id:'lotus',name:'연꽃',en:'LOTUS',dy:61,r:11,sub:'물과 생명',
+  how:'몸체의 꽃잎 무늬를 겹겹이 세어 봄',
+  desc:'몸체는 활짝 핀 연꽃 모양. 꽃잎 사이사이에 물고기·새 같은 생물이 새겨져 물과 생명의 세계를 이룬다.'},
+ {id:'dragon',name:'용',en:'DRAGON',dy:96,r:16,sub:'물의 근원 · 받침',
+  how:'받침을 감은 비늘을 따라 내려가 머리를 찾음',
+  desc:'받침이 된 용이 몸을 힘차게 틀어 올리고, 입으로 연꽃 몸체를 받쳐 물고 있다. 꼭대기의 봉황과 짝을 이룬다.'}
+];
+const codex=$('#codex');
+ENTRIES.forEach(e=>{const d=document.createElement('div');d.className='slot';d.innerHTML='?';e.slot=d;codex.appendChild(d);});
+
+/* ---------- state ---------- */
+let scene='title',st=0,fade=0,flash=0,now=0;
+const ptr={down:false,last:null};
+let cursor=null,lastScrape=0;
+const parts=[];
+const stars=Array.from({length:46},(_,i)=>({x:Math.floor(hash(i,7)*W),y:Math.floor(hash(i,9)*86),p:hash(i,3)*6,sp:1+hash(i,5)*3,b:hash(i,11)>0.7}));
+function drawStars(g,t,maxY){stars.forEach(s=>{if(s.y<maxY&&Math.sin(t*s.sp+s.p)>-0.4)P(g,s.x,s.y,s.b?'#fff7dc':'#7d84c8');});}
+function go(s){scene=s;st=0;fade=1;}
+
+/* ---------- backgrounds ---------- */
+const PIT={x:30,y:92,w:100,h:148},DIG={cx:80,T:98};
+const [digBg,dg]=mk(W,H);
+(()=>{const sky=['#060a22','#091030','#0c143c','#111a4a','#16205a'];for(let i=0;i<5;i++)RR(dg,0,i*16,W,16,sky[i]);
+ disc(dg,130,20,7,'#f6e7b0');disc(dg,128,18,2,'#e2cf90');P(dg,133,23,'#e2cf90');
+ for(let x=0;x<W;x++){const h=7+Math.round(4*Math.sin(x*0.07)+3*Math.sin(x*0.19+1));RR(dg,x,80-h,1,h,'#0a0f30');}
+ for(let y=80;y<H;y++)for(let x=0;x<W;x++){const v=hash(x+500,y);dg.fillStyle=v>0.93?'#4a2f1b':v<0.05?'#2c1b10':'#3b2516';dg.fillRect(x,y,1,1);}
+ RR(dg,PIT.x-2,PIT.y-2,PIT.w+4,PIT.h+2,'#140c06');RR(dg,PIT.x-2,PIT.y-3,PIT.w+4,1,'#6b4429');RR(dg,PIT.x,PIT.y,PIT.w,PIT.h,'#22150c');
+ for(let r=0;r<26;r++){const hw=Math.round(r*0.75);RR(dg,16-hw,56+r,hw*2+1,1,r%5===0?'#22305c':'#2b3a6b');}
+ for(let r=10;r<26;r++){const hw=Math.round((r-10)*0.3);RR(dg,16-hw,56+r,hw*2+1,1,'#f2c14e');}
+ RR(dg,146,58,1,26,'#1a1208');RR(dg,140,58,7,1,'#1a1208');
+ RR(dg,136,96,1,16,'#6b4429');RR(dg,134,110,5,4,'#9aa3b5');RR(dg,135,96,3,1,'#8a5a1c');})();
+const [labBg,lg]=mk(W,H);
+(()=>{RR(lg,0,0,W,H,'#141b4a');for(let y=4;y<150;y+=8)for(let x=4;x<W;x+=8)P(lg,x,y,'#1f2866');
+ RR(lg,0,150,W,40,'#10163d');RR(lg,0,150,W,1,'#2a3378');
+ RR(lg,6,42,40,2,'#6b4429');RR(lg,9,34,6,8,PAL.T);RR(lg,18,36,5,6,'#a33a2a');RR(lg,26,31,8,11,'#c9b98a');RR(lg,36,37,6,5,'#5a6cc0');
+ RR(lg,116,18,36,26,'#d8cfa8');RR(lg,116,18,36,1,'#8a7c56');for(let i=0;i<5;i++)RR(lg,120,23+i*4,20+((i*7)%9),1,'#8a7c56');disc(lg,144,36,3,'#c8452f');
+ RR(lg,0,190,W,3,'#8a5a32');RR(lg,0,193,W,47,'#5a3a22');for(let x=0;x<W;x+=37)RR(lg,x,193,1,47,'#3b2516');for(let y=205;y<H;y+=14)RR(lg,0,y,W,1,'#4a2f1b');
+ for(let r=0;r<5;r++){const hw=Math.round(26*Math.sqrt(1-((r-2)/2.6)**2));RR(lg,80-hw,187+r,hw*2+1,1,r<2?'#a8364a':'#7a1f2b');}})();
+
+/* ---------- DIG (photo scene) ---------- */
+const ph=$('#ph'),pg=ph.getContext('2d');pg.imageSmoothingEnabled=false;
+const IMG={};let imgsReady=Promise.all(['bg','char','reveal','found','burner_small'].map(n=>new Promise(res=>{const i=new Image();i.onload=()=>{IMG[n]=i;res();};i.onerror=res;i.src=n+'.png';})));
+const CHAR={x:424,y:600},NEED=24;const [rvCv,rvG]=mk(440,470);const rvTh=[];for(let y=0;y<470;y+=6)for(let x=0;x<440;x+=6)rvTh.push([x,y,Math.random()]);let rvP=-1;
+function buildReveal(p){if(!IMG.reveal||p===rvP)return;rvP=p;rvG.clearRect(0,0,440,470);rvTh.forEach(([x,y,t])=>{if(t<p)rvG.drawImage(IMG.reveal,x,y,6,6,x,y,6,6);});}
+let strokes=0,digDone=false,swing=0,queued=0,rubAcc=0,dust=[],glints=[],foundT=0;
+const BR_A=["...KKK","..KHHK",".KHHK.","KBBK..","KBBK..","KKK..."],BR_B=["......","......","KKKKKK","KBBHHK","KBBHHK","KKKKKK"];
+const BPAL={K:'#2a160c',H:'#9a6232',B:'#f3dfa6'};
+function px6(rows,x,y){for(let j=0;j<rows.length;j++)for(let i=0;i<rows[j].length;i++){const c=rows[j][i];if(c!=='.'){pg.fillStyle=BPAL[c];pg.fillRect(x+i*6,y+j*6,6,6);}}}
+function stroke(){if(digDone)return;if(swing>0){queued=Math.min(queued+1,2);return;}doStroke();}
+function doStroke(){swing=1;strokes++;beep(140+Math.random()*90,0.05,'triangle',0.04);
+  for(let i=0;i<7;i++)dust.push({x:372+Math.random()*50,y:690+Math.random()*30,vx:-60-Math.random()*120,vy:-80-Math.random()*120,t:0.6+Math.random()*0.3,c:['#8b5a34','#a5703f','#6e4325','#c09060'][i%4]});
+  if(Math.random()<0.6)glints.push({x:160+Math.random()*150,y:440+Math.random()*180,t:0.5});
+  updDig();if(strokes>=NEED)digFound();}
+function updDig(){const p=Math.min(1,strokes/NEED),f=$('#dgBar');if(f)f.style.width=(p*100)+'%';$('#hudR').textContent='흙 털기 '+Math.round(p*100)+'%';}
+function startDig(){strokes=0;rvP=-1;digDone=false;swing=0;queued=0;dust=[];glints=[];go('dig');ph.style.display='block';
+  $('#sceneName').textContent='STAGE1 발굴';$('#digProg').style.display='none';$('#codex').style.display='none';
+  overlay.innerHTML='<div class="cream" style="left:3%;top:2.5%;right:3%;padding:2% 3%"><div style="display:flex;justify-content:space-between;font-size:calc(var(--u)*4.4)"><span>발굴 진행도</span><span class="tag2">BRUSH × '+NEED+'</span></div><div class="cbar"><i id="dgBar"></i></div></div>'+
+   '<div class="cream" style="left:3%;bottom:2.5%;padding:2% 4%;line-height:1.25"><div style="font-size:calc(var(--u)*5.6)">부여 능산리 절터</div><div style="font-size:calc(var(--u)*4.6)">1993년 12월</div></div>'+
+   '<button class="cream abtn" id="abtn" style="right:3%;bottom:2.5%"><b>A</b> 흙 털기</button>';
+  $('#abtn').onpointerdown=e=>{e.preventDefault();audio();stroke();};updDig();
+  say('1993년 12월, 부여 능산리 절터. 화면을 문지르거나 Ⓐ를 눌러 흙을 털어내자!');}
+function digFound(){digDone=true;foundT=0;flash=1;jingle([523,659,784,1047,784,1047],100);
+  setTimeout(()=>{beep(988,0.1);beep(1319,0.25,'square',0.04);},700);
+  overlay.innerHTML='<div class="cream pop" style="left:3%;right:3%;top:2.5%;text-align:center;padding:3% 2%"><div class="iff">ITEM FOUND!</div><div style="font-size:calc(var(--u)*5.2)">금빛 유물 ??? 을(를) 발견했다!</div></div>'+
+   '<div class="yaho pop" style="left:83%;top:49%">야호!</div>'+
+   '<div class="cream" style="left:3%;bottom:2.5%;padding:2% 4%;line-height:1.25"><div style="font-size:calc(var(--u)*5.6)">부여 능산리 절터</div><div style="font-size:calc(var(--u)*4.6)">1993년 12월</div></div>'+
+   '<button class="cream abtn" id="nx" style="right:3%;bottom:2.5%">조사실로 ▶</button>';
+  $('#hudR').textContent='ITEM FOUND';
+  $('#nx').onclick=()=>{beep(660,0.08);overlay.innerHTML='';ph.style.display='none';startMove();};
+  say('야호! 흙 속에서 금빛 유물이 모습을 드러냈다. 조사실로 옮겨 자세히 살펴보자.');}
+function drawDig(dt){
+  if(!IMG.bg){pg.fillStyle='#000';pg.fillRect(0,0,720,1080);return;}
+  if(digDone){foundT+=dt;pg.drawImage(IMG.found,0,0);
+    for(let i=0;i<6;i++){const a=now/500+i*1.05,x=235+Math.cos(a)*200,y=470+Math.sin(a)*170;if((now/160+i)%2<1){pg.fillStyle='#fff7dc';pg.fillRect(Math.round(x/6)*6,Math.round(y/6)*6,6,6);pg.fillStyle='#ffe08a';pg.fillRect(Math.round(x/6)*6-6,Math.round(y/6)*6,18,6);pg.fillRect(Math.round(x/6)*6,Math.round(y/6)*6-6,6,18);}}
+    return;}
+  pg.drawImage(IMG.bg,0,0);
+  const p=Math.min(1,strokes/NEED);if(IMG.reveal&&p>0){buildReveal(p);pg.drawImage(rvCv,0,230);}
+  let dx=0,dy=0,br=BR_A;
+  if(swing>0){swing-=dt/0.2;if(swing>0.5){dx=-6;dy=6;br=BR_B;}if(swing<=0){swing=0;if(queued>0){queued--;doStroke();}}}
+  else{dy=(Math.floor(now/450)%2)?-6:0;}
+  pg.drawImage(IMG.char,CHAR.x+dx,CHAR.y+dy);px6(br,CHAR.x+dx-24,CHAR.y+dy+138);
+  dust.forEach(d=>{d.t-=dt;d.vy+=420*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;});dust=dust.filter(d=>d.t>0);
+  dust.forEach(d=>{pg.fillStyle=d.c;pg.fillRect(Math.round(d.x/6)*6,Math.round(d.y/6)*6,6,6);});
+  glints.forEach(g=>g.t-=dt);glints=glints.filter(g=>g.t>0);
+  glints.forEach(g=>{const x=Math.round(g.x/6)*6,y=Math.round(g.y/6)*6;pg.fillStyle='#fff7dc';pg.fillRect(x,y,6,6);pg.fillStyle='#ffe08a';pg.fillRect(x-6,y,18,6);pg.fillRect(x,y-6,6,18);});}
+function sparkle(g,x,y,big){P(g,x,y,'#fff7dc');if(big){P(g,x-1,y,'#ffe08a');P(g,x+1,y,'#ffe08a');P(g,x,y-1,'#ffe08a');P(g,x,y+1,'#ffe08a');P(g,x-2,y,'#c8902a');P(g,x+2,y,'#c8902a');P(g,x,y-2,'#c8902a');P(g,x,y+2,'#c8902a');}}
+
+/* ---------- MOVE ---------- */
+function startMove(){go('move');fade=0;ph.style.display='block';$('#sceneName').textContent='MOVE';$('#digProg').style.display='none';$('#hudR').textContent='LOADING';
+  overlay.innerHTML='<div class="cream pop" style="left:6%;right:6%;top:5%;bottom:12%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:4% 5% 5%">'+
+   '<div class="mvglow"></div><span class="spk" style="left:18%;top:18%">✦</span><span class="spk" style="right:16%;top:10%">✦</span><span class="spk" style="right:12%;top:48%">✦</span><span class="spk" style="left:13%;top:60%">✦</span>'+
+   '<img src="burner_big.png" class="mvimg"><div style="font-size:calc(var(--u)*6);margin:4% 0 3%">조사실로 이동 중...</div>'+
+   '<div style="display:flex;align-items:center;gap:3%;width:100%"><div class="cbar" style="flex:1;margin:0;height:calc(var(--u)*5)"><i id="mvBar"></i></div><span id="mvPct" class="tag2" style="font-size:calc(var(--u)*3.4);color:#6b3a10">0%</span></div></div>'+
+   '<div class="tipbar"><b>TIP</b> 향로는 뚜껑과 몸체가 분리된 채 묻혀 있었다.</div>';
+  say('조심조심… 발굴한 유물을 조사실로 옮기는 중.');}
+function drawMove(){if(IMG.bg){pg.drawImage(IMG.bg,0,0);pg.fillStyle='rgba(8,22,12,.68)';pg.fillRect(0,0,720,1080);}
+  const p=clamp((st-0.3)/2.6,0,1),b=$('#mvBar'),t=$('#mvPct');if(b)b.style.width=(Math.floor(p*20)*5)+'%';if(t)t.textContent=(Math.floor(p*20)*5)+'%';
+  if(st>3.3&&scene==='move'){ph.style.display='none';startLab();}}
+/* ---------- LAB ---------- */
+const LAB={cx:80,T:72};
+let lens={x:80,y:120,vis:false},gauge=0,gTarget=null,found={},paused=false,idle=0,hintT=0,hints=[],lastTick=0;
+function startLab(){go('lab');overlay.innerHTML='';$('#sceneName').textContent='STAGE2 분석';$('#codex').style.display='grid';updHud();
+  say('조사실 도착. 돋보기로 향로 곳곳을 비춰 보자. 무언가 보이면 잠깐 멈춰서 분석!');}
+function updHud(){const n=Object.keys(found).length;$('#hudR').textContent='도감 '+n+'/5';}
+function updateLab(dt){if(paused)return;idle+=dt;let best=null,bv=9;
+  if(lens.vis)ENTRIES.forEach(e=>{if(found[e.id])return;const d=Math.hypot(lens.x-LAB.cx,lens.y-(LAB.T+e.dy));if(d<e.r+2&&d/e.r<bv){bv=d/e.r;best=e;}});
+  if(best){if(gTarget!==best){gTarget=best;gauge=0;}gauge+=dt/1.1;if(now-lastTick>130){beep(300+gauge*600,0.04,'square',0.025);lastTick=now;}if(gauge>=1)discover(best);}
+  else{gauge=Math.max(0,gauge-dt*2);if(gauge===0)gTarget=null;}
+  if(idle>8){hintT-=dt;if(hintT<=0){hintT=1.3;const left=ENTRIES.filter(e=>!found[e.id]);if(left.length){const e=left[Math.floor(Math.random()*left.length)];hints.push({x:LAB.cx+(Math.random()-0.5)*e.r,y:LAB.T+e.dy+(Math.random()-0.5)*e.r,t:0.9});}}}
+  hints.forEach(h=>h.t-=dt);hints=hints.filter(h=>h.t>0);}
+function renderLabBuf(){bx.drawImage(labBg,0,0);drawBurnerAt(bx,LAB.cx,LAB.T);}
+function discover(e){found[e.id]=true;paused=true;gauge=0;gTarget=null;idle=0;hints=[];
+  renderLabBuf();const [c,g]=mk(36,36);g.drawImage(buf,LAB.cx-18,LAB.T+e.dy-18,36,36,0,0,36,36);e.img=c;
+  e.slot.className='slot on';e.slot.innerHTML='';const sc=document.createElement('canvas');sc.width=36;sc.height=36;sc.getContext('2d').drawImage(c,0,0);e.slot.appendChild(sc);
+  const sp=document.createElement('span');sp.textContent=e.name;e.slot.appendChild(sp);
+  jingle([659,880,1175],90);updHud();const n=Object.keys(found).length;
+  overlay.innerHTML='<div class="center dim"><div class="card pop"><div class="tag">NEW ENTRY · 0'+n+' / 05</div><h3>'+e.name+'<small>'+e.en+'</small></h3><canvas id="ci" width="36" height="36"></canvas><p class="how">▶ 획득: '+e.how+'</p><p>'+e.desc+'</p><div style="clear:both;text-align:right"><button class="btn" id="nx">도감 등록 ▶</button></div></div></div>';
+  const ci=$('#ci').getContext('2d');ci.imageSmoothingEnabled=false;ci.drawImage(c,0,0);
+  $('#nx').onclick=()=>{beep(660,0.08);overlay.innerHTML='';paused=false;
+    if(Object.keys(found).length===ENTRIES.length)complete();else say(['좋아! 다음 요소를 찾아보자.','도감이 조금씩 채워지고 있다.','향로엔 아직 비밀이 남아 있다…','하나 남았다! 마지막 요소는 어디에?'][n-1]||'계속 찾아보자.');};}
+function drawLab(){renderLabBuf();ctx.drawImage(buf,0,0);
+  hints.forEach(h=>sparkle(ctx,h.x,h.y,h.t>0.45));
+  if(lens.vis&&scene==='lab'){const R=16,x=lens.x,y=lens.y;ctx.save();ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.clip();
+    ctx.drawImage(buf,x-R/2,y-R/2,R,R,x-R,y-R,2*R,2*R);ctx.fillStyle='rgba(255,240,200,.08)';ctx.fillRect(x-R,y-R,2*R,2*R);ctx.restore();
+    ring(ctx,x,y,R,'#2a1a0c');ring(ctx,x,y,R+1,'#f2c14e');ring(ctx,x,y,R+2,'#8a5a1c');P(ctx,x-9,y-9,'#fff7dc');P(ctx,x-10,y-8,'#fff7dc');
+    for(let k=0;k<10;k++){P(ctx,x+12+k,y+12+k,'#5a3a22');P(ctx,x+13+k,y+12+k,'#8a5a1c');P(ctx,x+12+k,y+13+k,'#3b2516');}
+    if(gauge>0){const n=Math.floor(gauge*56);for(let i=0;i<n;i++){const a=-Math.PI/2+i/56*Math.PI*2;P(ctx,x+Math.cos(a)*(R+4),y+Math.sin(a)*(R+4),'#ffe08a');P(ctx,x+Math.cos(a)*(R+5),y+Math.sin(a)*(R+5),'#c8902a');}}}}
+
+/* ---------- COMPLETE / DIAGRAM ---------- */
+function complete(){paused=true;flash=0.8;jingle([523,659,784,1047,1319,1568],120);$('#hudR').textContent='도감 100%';
+  overlay.innerHTML='<div class="center dim"><div class="banner pop" style="font-size:14px">COLLECTION<br>100%</div><div class="sub">모든 요소 분석 완료!</div><button class="btn" id="nx">연결 보기 ▶</button></div>';
+  say('모든 요소 분석 완료! 도감이 100% 채워졌다.');
+  $('#nx').onclick=()=>{beep(660,0.08);startDiagram();};}
+function startDiagram(){go('diagram');$('#sceneName').textContent='STAGE3 연결';lens.vis=false;
+  overlay.innerHTML=ENTRIES.map((e,i)=>'<div class="label" id="lb'+i+'" style="left:'+(100/W*100)+'%;top:'+((LAB.T+e.dy)/H*100)+'%">'+e.name+'<small>'+e.sub+'</small></div>').join('')+'<div class="bottom"><button class="btn" id="nx" style="display:none">전시실로 ▶</button></div>';
+  $('#nx').onclick=()=>{beep(660,0.08);startMuseum();};
+  say('하늘의 봉황부터 물속의 용까지 — 백제 사람들이 꿈꾼 세계가 향로 하나에 층층이 쌓여 있다.');}
+function drawDiagram(){ctx.drawImage(labBg,0,0);RR(ctx,0,0,W,186,'rgba(11,16,48,.55)');const cx=48;drawBurnerAt(ctx,cx,LAB.T);
+  ENTRIES.forEach((e,i)=>{const p=clamp(st*1.4-i*0.45,0,1);if(p<=0)return;const y=LAB.T+e.dy,x0=cx+({phoenix:5,musicians:10,mountain:18,lotus:18,dragon:6})[e.id],x1=97,xe=x0+(x1-x0)*p;
+    for(let x=x0;x<xe;x+=2)P(ctx,x,y,'#ffe08a');disc(ctx,x0,y,1,'#fff7dc');if(p>=1){disc(ctx,x1,y,1.5,'#f2c14e');const lb=$('#lb'+i);if(lb&&!lb.classList.contains('on')){lb.classList.add('on');beep(440+i*110,0.06);}}});
+  if(st>4.2){const b=$('#nx');if(b&&b.style.display==='none')b.style.display='';}}
+
+/* ---------- MUSEUM ---------- */
+let smoke=[],smokeT=0;
+function startMuseum(){go('museum');$('#sceneName').textContent='FINAL 전시';$('#hudR').textContent='CLEAR';smoke=[];
+  overlay.innerHTML='<div class="plate">국립부여박물관 · 백제금동대향로</div><div class="center" style="justify-content:flex-start;padding-top:5%"><div class="banner" style="font-size:9px">— ARCHIVE COMPLETE —</div></div>';
+  say('1993년 진흙 속에서 깨어난 향로는 지금 국립부여박물관에서 다시 빛나고 있다. 기록 완료!');
+  setTimeout(()=>{if(scene!=='museum')return;const d=document.createElement('div');d.className='bottom';d.style.bottom='58px';d.innerHTML='<button class="btn" id="again">다시 하기 ↺</button>';overlay.appendChild(d);
+    $('#again').onclick=()=>{beep(660,0.08);restart();};},2500);}
+function drawMuseum(dt){RR(ctx,0,0,W,H,'#060818');for(let y=0;y<200;y+=10)RR(ctx,0,y,W,1,'#0a0e26');
+  ctx.fillStyle='rgba(255,230,160,.07)';ctx.beginPath();ctx.moveTo(66,0);ctx.lineTo(94,0);ctx.lineTo(128,214);ctx.lineTo(32,214);ctx.closePath();ctx.fill();
+  RR(ctx,0,214,W,26,'#0d1130');RR(ctx,0,214,W,1,'#1e2556');
+  const gl=0.5+0.2*Math.sin(now/500);const gr=ctx.createRadialGradient(80,130,4,80,130,70);gr.addColorStop(0,'rgba(242,193,78,'+(0.22*gl)+')');gr.addColorStop(1,'rgba(242,193,78,0)');ctx.fillStyle=gr;ctx.fillRect(0,50,W,170);
+  RR(ctx,44,200,72,16,'#232850');RR(ctx,42,198,76,3,'#3b4278');RR(ctx,44,213,72,3,'#151a3a');
+  drawBurnerAt(ctx,80,84);
+  ctx.strokeStyle='rgba(160,200,230,.35)';ctx.lineWidth=1;ctx.strokeRect(36.5,40.5,87,157);RR(ctx,40,46,1,40,'rgba(255,255,255,.25)');RR(ctx,43,46,1,20,'rgba(255,255,255,.15)');
+  smokeT-=dt;if(smokeT<=0){smokeT=0.09;smoke.push({x:80+(Math.random()-0.5)*16,y:92+Math.random()*8,vy:-6-Math.random()*5,t:0,life:4+Math.random()*2,ph:Math.random()*6});}
+  smoke.forEach(s=>{s.t+=dt;s.y+=s.vy*dt;});smoke=smoke.filter(s=>s.t<s.life&&s.y>-2);
+  smoke.forEach(s=>{const a=0.5*(1-s.t/s.life);P(ctx,s.x+3*Math.sin(s.t*1.5+s.ph),s.y,'rgba(215,218,255,'+a+')');});
+  const vp={K:'#000'};spr(ctx,VIS,14,206,vp);spr(ctx,VIS,138,206,vp);spr(ctx,VIS.slice(0),24,208,vp);}
+
+/* ---------- TITLE ---------- */
+function showTitle(){scene='title';st=0;$('#sceneName').textContent='金銅大香爐';$('#hudR').textContent='';$('#codex').style.display='none';$('#digProg').style.display='none';
+  overlay.innerHTML='<div class="center" style="justify-content:space-between;padding:12% 0 10%"><div><div class="banner" style="font-size:15px">향로 발굴 기록</div><div class="tag" style="margin-top:10px">BAEKJE GILT-BRONZE INCENSE BURNER</div></div><div><button class="btn" id="start">PRESS START</button></div></div>';
+  say('백제금동대향로를 발굴하고, 분석하고, 도감을 완성하자. 16비트 조사 일지 시작!');
+  $('#start').onclick=async()=>{audio();await imgsReady;jingle([392,523,659,784],90);overlay.innerHTML='';startDig();};}
+function drawTitle(){const sky=['#060a22','#08102e','#0b1438','#0e1844','#121d52','#16205a'];for(let i=0;i<6;i++)RR(ctx,0,i*40,W,40,sky[i]);drawStars(ctx,now/1000,240);
+  const gr=ctx.createRadialGradient(80,135,5,80,135,80);gr.addColorStop(0,'rgba(242,193,78,.28)');gr.addColorStop(1,'rgba(242,193,78,0)');ctx.fillStyle=gr;ctx.fillRect(0,40,W,200);
+  drawBurnerAt(ctx,80,70+Math.round(Math.sin(now/600)*2));
+  for(let i=0;i<5;i++){const a=now/700+i*1.26;sparkle(ctx,80+Math.cos(a)*44,130+Math.sin(a)*70,(now/150+i)%2<1);}}
+
+function restart(){ph.style.display='none';found={};paused=false;idle=0;hints=[];ENTRIES.forEach(e=>{e.slot.className='slot';e.slot.innerHTML='?';e.img=null;});overlay.innerHTML='';audio();startDig();}
+
+/* ---------- input ---------- */
+function toL(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
+function onPtr(e){const p=toL(e);
+  if(scene==='dig'){if(!ptr.down||digDone)return;if(ptr.last){rubAcc+=Math.hypot(p.x-ptr.last.x,p.y-ptr.last.y);while(rubAcc>22){rubAcc-=22;stroke();}}else{stroke();}ptr.last=p;return;}
+  else if(scene==='lab'){lens.vis=true;const off=e.pointerType==='mouse'?0:-26;lens.x=clamp(Math.round(p.x),8,152);lens.y=clamp(Math.round(p.y+off),8,232);}}
+cv.addEventListener('pointerdown',e=>{audio();try{cv.setPointerCapture(e.pointerId);}catch(_){}ptr.down=true;ptr.last=null;onPtr(e);});
+cv.addEventListener('pointermove',onPtr);
+addEventListener('pointerup',()=>{ptr.down=false;ptr.last=null;});
+addEventListener('pointercancel',()=>{ptr.down=false;ptr.last=null;});
+
+/* ---------- loop ---------- */
+let last=performance.now();
+function loop(t){const dt=Math.min(0.05,(t-last)/1000);last=t;now=t;st+=dt;
+  if(scene==='lab')updateLab(dt);
+  parts.forEach(p=>{p.life-=dt;p.vy+=p.g*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;});for(let i=parts.length-1;i>=0;i--)if(parts[i].life<=0)parts.splice(i,1);
+  if(scene==='title')drawTitle();else if(scene==='dig')drawDig(dt);else if(scene==='move')drawMove();else if(scene==='lab')drawLab();else if(scene==='diagram')drawDiagram();else if(scene==='museum')drawMuseum(dt);
+  parts.forEach(p=>P(ctx,p.x,p.y,p.c));
+  if(flash>0){ctx.fillStyle='rgba(255,247,220,'+flash+')';ctx.fillRect(0,0,W,H);flash=Math.max(0,flash-dt*2.5);}
+  if(fade>0){ctx.fillStyle='rgba(0,0,0,'+fade+')';ctx.fillRect(0,0,W,H);fade=Math.max(0,fade-dt*2.2);}
+  requestAnimationFrame(loop);}
+showTitle();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
